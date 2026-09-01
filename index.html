@@ -117,8 +117,6 @@ async function oneFile(season,country,code){
  const t=await fetchText(url);
  return parseCSV(t).map(o=>normalize(o,country,code,season)).filter(Boolean);
 }
-
-async function loadAll(){
  const b=document.getElementById('load'), st=document.getElementById('status'),
        er=document.getElementById('error'), an=document.getElementById('analyze');
  b.disabled=true; an.disabled=true; rows=[]; er.textContent='';
@@ -174,4 +172,87 @@ function analyze(){
 </script>
 <script src="config.js"></script>
 <script src="apiService.js"></script
+  <script>
+async function loadTodayData() {
+  try {
+    const res = await fetch("./data/today.json?t=" + Date.now());
+
+    if (!res.ok) {
+      throw new Error("Veri okunamadı: " + res.status);
+    }
+
+    const data = await res.json();
+    const matches = data.response || [];
+
+    const button = [...document.querySelectorAll("button")]
+      .find(b => b.textContent.includes("Yükleniyor"));
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Bugünkü Bülteni Göster";
+
+      button.onclick = function () {
+        showMatches(matches);
+      };
+    }
+
+    const status = [...document.querySelectorAll("p")]
+      .find(p => p.textContent.includes("Henüz veri yüklenmedi"));
+
+    if (status) {
+      status.textContent = "Canlı veri hazır: " + matches.length + " maç ✅";
+    }
+
+  } catch (error) {
+    alert("Hata: " + error.message);
+  }
+}
+
+function showMatches(matches) {
+  let old = document.getElementById("todayMatches");
+  if (old) old.remove();
+
+  const section = document.createElement("section");
+  section.id = "todayMatches";
+  section.style.marginTop = "20px";
+
+  section.innerHTML =
+    "<h2>Bugünkü Canlı Bülten</h2>" +
+    "<p>Toplam " + matches.length + " maç</p>";
+
+  matches.forEach(m => {
+    const div = document.createElement("div");
+
+    div.style.cssText =
+      "background:white;padding:14px;margin:10px 0;border-radius:14px";
+
+    const time = new Date(m.fixture.date)
+      .toLocaleTimeString("tr-TR", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+    div.innerHTML =
+      "<b>" +
+      m.teams.home.name +
+      " - " +
+      m.teams.away.name +
+      "</b><br>" +
+      "<small>" +
+      m.league.country +
+      " • " +
+      m.league.name +
+      " • " +
+      time +
+      "</small>";
+
+    section.appendChild(div);
+  });
+
+  (document.querySelector("main") || document.body)
+    .appendChild(section);
+}
+
+loadTodayData();
+</script>
 </main></body></html>
