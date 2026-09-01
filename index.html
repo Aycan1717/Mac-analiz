@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mac Analiz</title>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#f3f4f6;
+  color:#111827;
+}
+main{
+  max-width:760px;
+  margin:auto;
+  padding:18px;
+}
+.card{
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  margin-bottom:16px;
+}
+h1{margin:0 0 8px}
+.muted{color:#6b7280}
+button{
+  width:100%;
+  padding:17px;
+  border:0;
+  border-radius:15px;
+  background:#111827;
+  color:white;
+  font-size:18px;
+  font-weight:bold;
+  margin-top:15px;
+}
+button:disabled{opacity:.45}
+.stat{
+  background:#f3f4f6;
+  padding:12px;
+  border-radius:12px;
+  margin-top:12px;
+}
+.match{
+  background:white;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:10px;
+}
+select{
+  width:100%;
+  padding:14px;
+  margin-bottom:15px;
+  font-size:16px;
+  border-radius:12px;
+}
+.ok{color:#15803d;font-weight:bold}
+.error{color:#b91c1c;font-weight:bold}
+</style>
+</head>
+
+<body>
+
+<main>
+
+<div class="card">
+<h1>⚽ Mac Analiz</h1>
+<p class="muted">Canlı futbol analiz sistemi</p>
+</div>
+
+<div class="card">
+<h2>Bugünkü Bülten</h2>
+
+<p id="status">Veri kontrol ediliyor...</p>
+
+<div class="stat">
+Maç sayısı:
+<strong id="matchCount">-</strong>
+</div>
+
+<div class="stat">
+Lig sayısı:
+<strong id="leagueCount">-</strong>
+</div>
+
+<button id="showButton" disabled>
+Veri hazırlanıyor...
+</button>
+</div>
+
+<div id="matchSection" style="display:none">
+
+<div class="card">
+<h2>Bugünkü Maçlar</h2>
+
+<select id="leagueFilter">
+<option value="ALL">Tüm Ligler</option>
+</select>
+
+<p id="listedCount"></p>
+</div>
+
+<div id="matches"></div>
+
+</div>
+
+</main>
+
+<script>
+
+let MATCHES=[];
+
+async function loadData(){
+
+  const status=document.getElementById("status");
+  const button=document.getElementById("showButton");
+
+  try{
+
+    const response=await fetch(
+      "./data/today.json?v="+Date.now(),
+      {cache:"no-store"}
+    );
+
+    if(!response.ok){
+      throw new Error("HTTP "+response.status);
+    }
+
+    const data=await response.json();
+
+    if(!Array.isArray(data.response)){
+      throw new Error("Geçersiz veri");
+    }
+
+    MATCHES=data.response;
+
+    document.getElementById("matchCount").textContent=
+      MATCHES.length;
+
+    const leagues=new Map();
+
+    MATCHES.forEach(m=>{
+
+      const id=String(m.league?.id || "0");
+
+      if(!leagues.has(id)){
+        leagues.set(id,{
+          name:m.league?.name || "Bilinmeyen Lig",
+          country:m.league?.country || ""
+        });
+      }
+
+    });
+
+    document.getElementById("leagueCount").textContent=
+      leagues.size;
+
+    const filter=document.getElementById("leagueFilter");
+
+    [...leagues.entries()]
+    .sort((a,b)=>
+      (a[1].country+a[1].name)
+      .localeCompare(b[1].country+b[1].name)
+    )
+    .forEach(([id,item])=>{
+
+      const option=document.createElement("option");
+
+      option.value=id;
+
+      option.textContent=
+        item.country+" • "+item.name;
+
+      filter.appendChild(option);
+
+    });
+
+    status.textContent=
+      "Canlı veri hazır: "+MATCHES.length+" maç ✅";
+
+    status.className="ok";
+
+    button.disabled=false;
+    button.textContent="Bugünkü Bülteni Göster";
+
+  }
+  catch(error){
+
+    status.textContent=
+      "Veri yüklenemedi: "+error.message;
+
+    status.className="error";
+
+  }
