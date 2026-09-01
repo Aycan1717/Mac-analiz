@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>API Test</title>
+</head>
+<body>
+  <h2>API-FOOTBALL Test</h2>
+  <button onclick="testEt()">Bugünkü maçları çek</button>
+  <pre id="sonuc">Hazır</pre>
+
+  <script src="config.js"></script>
+  <script src="apiService.js"></script>
+
+  <script>
+    async function testEt() {
+      const alan = document.getElementById("sonuc");
+      alan.textContent = "Bağlanıyor...";
+
+      try {
+        const today = new Date().toISOString().slice(0,10);
+        const matches = await getFixturesByDate(today);
+
+        alan.textContent =
+          "BAĞLANTI BAŞARILI ✅\n" +
+          "Bugünkü maç sayısı: " + matches.length;
+      } catch (err) {
+        alan.textContent = "HATA ❌\n" + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
